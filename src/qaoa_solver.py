@@ -1,20 +1,51 @@
 import numpy as np
 
+from qiskit_optimization import QuadraticProgram
+from qiskit_optimization.algorithms import MinimumEigenOptimizer
+from qiskit_algorithms import QAOA
+from qiskit_algorithms.optimizers import COBYLA
+from qiskit.primitives import StatevectorSampler as Sampler
 
-def run_qaoa_solver(qubo):
+def make_quadratic_program(qubo):
     n = qubo.shape[0]
 
-    best_x = None
-    best_score = None
+    problem = QuadraticProgram()
 
-    # simple simulated quantum-style search for now
-    for _ in range(500):
-        x = np.random.randint(0, 2, size=n)
+    for i in range(n):
+        problem.binary_var(name=f"x{i}")
 
-        score = x.T @ qubo @ x
+    linear = {}
+    quadratic = {}
 
-        if best_score is None or score < best_score:
-            best_score = score
-            best_x = x
+    for i in range(n):
+        linear[f"x{i}"] = qubo[i][i]
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            if qubo[i][j] != 0:
+                quadratic[(f"x{i}", f"x{j}")] = qubo[i][j]
+
+    problem.minimize(linear=linear, quadratic=quadratic)
+
+    return problem
+
+
+def run_qaoa_solver(qubo):
+    problem = make_quadratic_program(qubo)
+
+    sampler = Sampler()
+    optimizer = COBYLA(maxiter=100)
+
+    qaoa = QAOA(
+        sampler=sampler,
+        optimizer=optimizer,
+        reps=1
+    )
+
+    qaoa_solver = MinimumEigenOptimizer(qaoa)
+    result = qaoa_solver.solve(problem)
+
+    best_x = np.array([int(v) for v in result.x])
+    best_score = result.fval
 
     return best_x, best_score
