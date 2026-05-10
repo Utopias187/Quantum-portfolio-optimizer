@@ -1,5 +1,20 @@
-def run_qaoa_solver(qubo):
-    print("QAOA solver will be added in the next step.")
-    print("QUBO matrix received with size:", qubo.shape)
+import numpy as np
 
-    return None
+
+def run_qaoa_solver(qubo):
+    n = qubo.shape[0]
+
+    best_x = None
+    best_score = None
+
+    # simple simulated quantum-style search for now
+    for _ in range(500):
+        x = np.random.randint(0, 2, size=n)
+
+        score = x.T @ qubo @ x
+
+        if best_score is None or score < best_score:
+            best_score = score
+            best_x = x
+
+    return best_x, best_score
