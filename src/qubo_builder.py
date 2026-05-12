@@ -14,7 +14,7 @@ def build_qubo_matrix(returns, covariance, k, penalty=2.0, risk_weight=1.0, retu
     for i in range(n):
         qubo[i][i] -= return_weight * returns[i]
 
-    # penalty for choosing more or fewer than k assets
+    # penalty for choosing more or fewer than k asset
     for i in range(n):
         qubo[i][i] += penalty * (1 - 2 * k)
 
